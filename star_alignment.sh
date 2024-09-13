@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #SBATCH --partition=PARTITION_NAME    # Partition (job queue)
 #SBATCH --requeue                     # Return job to the queue if preempted
