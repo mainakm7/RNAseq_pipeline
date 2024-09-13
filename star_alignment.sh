@@ -15,10 +15,10 @@
 #SBATCH --mail-user=EMAIL_ID          # Where to send email
 
 module purge
-module load STAR/2.7.5a
+module load STAR
 
-ls *_1.fastq > list.txt
-sed -i 's/_1.fastq//g' list.txt
+ls *_1.fastq.gz > list.txt
+sed -i 's/_1.fastq.gz//g' list.txt
 
 
 GENOME_REF_DIR="/path/to/genomeDir"
@@ -28,8 +28,10 @@ GTF_PATH="/path/to/annotation.gtf"
 while read -r line; do
     STAR --genomeDir "${GENOME_REF_DIR}" \
          --runThreadN ${SLURM_CPUS_PER_TASK} \
-         --readFilesIn "${line}_1.fastq" "${line}_2.fastq" \
-         --quantMode TranscriptomeSAM \
+         --readFilesIn "${line}_1.fastq.gz" "${line}_2.fastq.gz" \
+         --readFilesCommand zcat \
+         --quantMode GeneCounts \
+         --outSAMtype BAM Unsorted \
          --sjdbGTFfile "${GTF_PATH}" \
-         --outFileNamePrefix "${line}_"
+         --outFileNamePrefix "${line}"
 done < list.txt
