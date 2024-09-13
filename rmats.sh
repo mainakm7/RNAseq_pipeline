@@ -18,8 +18,8 @@ module purge
 
 # source activate conda_env
 
-module load STAR
-module load singularity
+module load STAR/2.7.5a
+module load singularity/3.1.0
 module load intel/17.0.4
 module load pgi
 
