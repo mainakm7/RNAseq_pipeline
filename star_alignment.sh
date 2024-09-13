@@ -14,6 +14,8 @@
 #SBATCH --mail-type=END,FAIL          # Send email on end or failure
 #SBATCH --mail-user=EMAIL_ID          # Where to send email
 
+module purge
+module load STAR
 
 ls *_1.fastq > list.txt
 sed -i 's/_1.fastq//g' list.txt

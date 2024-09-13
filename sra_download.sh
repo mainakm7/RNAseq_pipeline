@@ -2,7 +2,7 @@
 
 #SBATCH --partition=PARTITION_NAME    # Partition (job queue)
 #SBATCH --requeue                     # Return job to the queue if preempted
-#SBATCH --job-name=STARMAP            # Assign a short name to your job
+#SBATCH --job-name=SRA_DOWNLOAD       # Assign a short name to your job
 #SBATCH --nodes=1                     # Number of nodes
 #SBATCH --ntasks=1                    # Total # of tasks across all nodes
 #SBATCH --cpus-per-task=64            # Cores per task (>1 if multithread tasks)
