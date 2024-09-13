@@ -20,5 +20,5 @@ module load samtools/1.3.1
 ls *.bam > list.txt
 
 while read -r line; do
-    samtools sort -n -@ ${SLURM_CPUS_PER_TASK} -m 2G ${line} -o ${line%.bam}.sorted.bam 
+    samtools sort -n -@ ${SLURM_CPUS_PER_TASK} -m 2G ${line} -o ${line}.sorted.bam 
 done < list.txt
