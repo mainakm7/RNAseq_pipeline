@@ -38,7 +38,7 @@ SINGULARITY_IMAGE="/path/to/your_image.sif"
 singularity exec \
     -B ${WORKDIR}:/data \
     ${SINGULARITY_IMAGE} \
-    python -u /path/to/rmats.py \
+    python -u /rmats-turbo/rmats.py \
         --b1 ${BATCH1_PATH} \
         --b2 ${BATCH2_PATH} \
         --gtf /path/to/annotated.gtf \
