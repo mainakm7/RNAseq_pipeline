@@ -1,5 +1,5 @@
 # RNA-seq Pipeline for HPC
-This repository contains a comprehensive RNA-seq analysis pipeline, designed to be executed on a High-Performance Computing (HPC) environment using SLURM for job scheduling. The pipeline processes RNA-seq data from raw reads to downstream analysis, including alternative splicing analysis using RMATS. Additionally, a Nextflow pipeline is provided to streamline the entire workflow.
+This repository contains a comprehensive RNA-seq analysis pipeline, designed to be executed on a High-Performance Computing (HPC) environment using SLURM for job scheduling. The pipeline processes RNA-seq data from raw reads to downstream analysis, including alternative splicing analysis using RMATS. 
 
 ## Features
 Download RNA-seq data from SRA
