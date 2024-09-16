@@ -1,23 +1,26 @@
-params.cartpath = ""
-params.ngcpath = ""
-params.genomedir = ""
-params.gtf_path = ""
-params.sra_download = true
-params.star_alignment = true
-params.rmats_b1 = ""
-params.rmats_b2 = ""
-params.modulepath = ''
-params.sratoolkit = 'sratoolkit/2.10.8'
-params.STAR = 'STAR'
-params.samtools = 'samtools/1.3.1'
-params.singularity = 'singularity/3.1.0'
-params.intel = 'intel/17.0.4'
-params.pgi = 'pgi'
-params.cpus = 64
-params.memory = "200GB"
+params {
+    cartpath = ""
+    ngcpath = ""
+    genomedir = ""
+    gtf_path = ""
+    sra_download = true
+    star_alignment = true
+    bam_sort = true
+    rmats = true
+    rmats_b1 = ""
+    rmats_b2 = ""
+    modulepath = ''
+    sratoolkit = 'sratoolkit/2.10.8'
+    STAR = 'STAR'
+    samtools = 'samtools/1.3.1'
+    singularity = 'singularity/3.1.0'
+    intel = 'intel/17.0.4'
+    pgi = 'pgi'
+    cpus = 64
+    memory = "200GB"
+}
 
 process sra_download {
-
     publishDir "fastq_files", type: 'directory'
 
     input:
@@ -45,7 +48,6 @@ process sra_download {
 }
 
 process star_alignment {
-
     publishDir "bam_files", type: 'directory'
     publishDir "count_files", type: 'directory'
 
@@ -64,9 +66,7 @@ process star_alignment {
     module purge
     module load ${params.STAR}
 
-    # Extract the base name from the fastq file
     base_name=\$(basename ${fastq_file} _1.fastq.gz)
-
     GENOME_REF_DIR=${params.genomedir}
     GTF_PATH=${params.gtf_path}
 
@@ -86,7 +86,6 @@ process star_alignment {
 }
 
 process bam_sort {
-
     publishDir "sorted_bam_files", type: 'directory'
 
     input:
@@ -105,18 +104,13 @@ process bam_sort {
 
     mkdir -p sorted_bam_files
 
-    ls *.bam > list.txt
-
-    while read -r line; do
-        samtools sort -n -@ ${task.cpus} -m 2G ${line} -o ${line}.sorted.bam
-    done < list.txt
-
-    mv *.sorted.bam sorted_bam_files/
+    for bam in *.bam; do
+        samtools sort -n -@ ${task.cpus} -m 2G \$bam -o sorted_bam_files/\${bam%.bam}.sorted.bam
+    done
     """
 }
 
 process rmats {
-
     publishDir "rmats_files", type: 'directory'
 
     input:
@@ -139,13 +133,10 @@ process rmats {
     BATCH1_PATH=${params.rmats_b1}
     BATCH2_PATH=${params.rmats_b2}
 
-    # Create results directory if it doesn't exist
     mkdir -p rmats_files/tmp
 
-    # Define Singularity image
     SINGULARITY_IMAGE="/path/to/your_image.sif"
 
-    # Run RMATS on both batches in one Singularity command
     singularity exec \
         -B ${workDir}:/data \
         ${SINGULARITY_IMAGE} \
@@ -164,19 +155,29 @@ process rmats {
 }
 
 workflow rna_seq {
+    // Conditional logic for each process
     if (params.sra_download) {
         sra_download()
+    }
+    else {
+        fastq_ch = channel.fromPath("fastq_files/*.{fq,fq.gz,fastq,fastq.gz}")
     }
 
     if (params.star_alignment) {
         star_alignment()
     }
+    else {
+        bam_ch = channel.fromPath("bam_files/*.bam")
+    }
 
     if (params.bam_sort) {
         bam_sort()
     }
+    else {
+        sorted_bam_ch = channel.fromPath("sorted_bam_files/*.sorted.bam")
+    }
 
-    if (params.rmats) {
+    if (params.rmats && params.rmats_b1 && params.rmats_b2) {
         rmats()
     }
 }
