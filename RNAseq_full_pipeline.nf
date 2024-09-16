@@ -6,6 +6,13 @@ params.sra_download = true
 params.star_alignment = true
 params.rmats_b1 = ""
 params.rmats_b2 = ""
+params.modulepath = ''
+params.sratoolkit = 'sratoolkit/2.10.8'
+params.STAR = 'STAR'
+params.samtools = 'samtools/1.3.1'
+params.singularity = 'singularity/3.1.0'
+params.intel = 'intel/17.0.4'
+params.pgi = 'pgi'
 params.cpus = 64
 params.memory = "200GB"
 
@@ -20,14 +27,14 @@ process sra_download {
     output:
     path 'fastq_files/*.{fq,fq.gz,fastq,fastq.gz}' into fastq_ch
 
-    cpus params.cpus
-    memory params.memory
+    cpus ${params.cpus}
+    memory ${params.memory}
 
     script:
     """
     module purge
-    module use /path/to/modulefiles/
-    module load sratoolkit/2.10.8
+    module use ${params.modulepath}
+    module load ${params.sratoolkit}
 
     mkdir -p fastq_files
 
@@ -49,13 +56,13 @@ process star_alignment {
     path 'bam_files/*.bam' into bam_ch
     path 'count_files/*.out.tab' into countfiles_ch
 
-    cpus params.cpus
-    memory params.memory
+    cpus ${params.cpus}
+    memory ${params.memory}
 
     script:
     """
     module purge
-    module load STAR
+    module load ${params.STAR}
 
     # Extract the base name from the fastq file
     base_name=\$(basename ${fastq_file} _1.fastq.gz)
@@ -88,13 +95,13 @@ process bam_sort {
     output:
     path 'sorted_bam_files/*.sorted.bam' into sorted_bam_ch
 
-    cpus params.cpus
-    memory params.memory
+    cpus ${params.cpus}
+    memory ${params.memory}
 
     script:
     """
     module purge
-    module load samtools/1.3.1
+    module load ${params.samtools}
 
     mkdir -p sorted_bam_files
 
@@ -118,16 +125,16 @@ process rmats {
     output:
     path 'rmats_files/*.txt' into rmats_ch
 
-    cpus params.cpus
-    memory params.memory
+    cpus ${params.cpus}
+    memory ${params.memory}
 
     script:
     """
     module purge
-    module load STAR/2.7.5a
-    module load singularity/3.1.0
-    module load intel/17.0.4
-    module load pgi
+    module load ${params.STAR}
+    module load ${params.singularity}
+    module load ${params.intel}
+    module load ${params.pgi}
 
     BATCH1_PATH=${params.rmats_b1}
     BATCH2_PATH=${params.rmats_b2}
