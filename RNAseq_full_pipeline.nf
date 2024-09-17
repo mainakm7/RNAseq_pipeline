@@ -115,15 +115,15 @@ process bam_sort {
     """
 }
 
-batch1_ch = Channel.fromPath(params.rmats_b1)
-batch2_ch = Channel.fromPath(params.rmats_b2)
+batch1_ch = Channel.value(file(params.rmats_b1).list())
+batch2_ch = Channel.value(file(params.rmats_b2).list())
 
 process rmats {
     publishDir "rmats_files", type: 'directory'
 
     input:
-    path batch1_files from batch1_ch
-    path batch2_files from batch2_ch
+    val batch1_files from batch1_ch
+    val batch2_files from batch2_ch
 
     output:
     path 'rmats_files/*.txt' into rmats_ch
@@ -148,8 +148,8 @@ process rmats {
         -B ${workDir}:/data \
         ${SINGULARITY_IMAGE} \
         python -u /rmats-turbo/rmats.py \
-            --b1 ${batch1_files} \
-            --b2 ${batch2_files} \
+            --b1 ${batch1_files.join(',')} \
+            --b2 ${batch2_files.join(',')} \
             --gtf ${params.gtf_path} \
             -t paired \
             --readLength 100 \
@@ -160,6 +160,7 @@ process rmats {
             --allow-clipping
     """
 }
+
 
 workflow rna_seq {
     // Conditional logic for each process
