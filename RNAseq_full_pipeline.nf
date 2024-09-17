@@ -9,6 +9,7 @@ params {
     rmats = true
     rmats_b1 = ""
     rmats_b2 = ""
+    singularity_image = ""
     modulepath = ''
     sratoolkit = 'sratoolkit/2.10.8'
     STAR = 'STAR'
@@ -18,6 +19,7 @@ params {
     pgi = 'pgi'
     cpus = 64
     memory = "200GB"
+    queue = 'your_queue'
 }
 
 process sra_download {
@@ -32,6 +34,7 @@ process sra_download {
 
     cpus ${params.cpus}
     memory ${params.memory}
+    queue params.queue
 
     script:
     """
@@ -47,12 +50,14 @@ process sra_download {
     """
 }
 
+fastqpair_ch = Channel.fromFilePairs( 'fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}', size: 2 )
+
 process star_alignment {
     publishDir "bam_files", type: 'directory'
     publishDir "count_files", type: 'directory'
 
     input:
-    path fastq_file from fastq_ch
+    tuple path fastq_file1, fastq_file2 from fastqpair_ch
 
     output:
     path 'bam_files/*.bam' into bam_ch
@@ -60,20 +65,21 @@ process star_alignment {
 
     cpus ${params.cpus}
     memory ${params.memory}
+    queue params.queue
 
     script:
     """
     module purge
     module load ${params.STAR}
 
-    base_name=\$(basename ${fastq_file} _1.fastq.gz)
+    base_name=${fastq_file1.baseName.replace('_1', '')}
     GENOME_REF_DIR=${params.genomedir}
     GTF_PATH=${params.gtf_path}
 
     mkdir -p bam_files count_files
 
     STAR --genomeDir "${GENOME_REF_DIR}" \
-         --readFilesIn "${base_name}_1.fastq.gz" "${base_name}_2.fastq.gz" \
+         --readFilesIn "${fastq_file1}" "${fastq_file2}" \
          --readFilesCommand zcat \
          --quantMode GeneCounts \
          --outSAMtype BAM Unsorted \
@@ -96,6 +102,7 @@ process bam_sort {
 
     cpus ${params.cpus}
     memory ${params.memory}
+    queue params.queue
 
     script:
     """
@@ -104,23 +111,26 @@ process bam_sort {
 
     mkdir -p sorted_bam_files
 
-    for bam in *.bam; do
-        samtools sort -n -@ ${task.cpus} -m 2G \$bam -o sorted_bam_files/\${bam%.bam}.sorted.bam
-    done
+    samtools sort -n -@ ${task.cpus} -m 2G ${bam_file} -o sorted_bam_files/\${bam_file.baseName}.sorted.bam
     """
 }
+
+batch1_ch = Channel.fromPath(params.rmats_b1)
+batch2_ch = Channel.fromPath(params.rmats_b2)
 
 process rmats {
     publishDir "rmats_files", type: 'directory'
 
     input:
-    path sorted_bam_file from sorted_bam_ch
+    path batch1_files from batch1_ch
+    path batch2_files from batch2_ch
 
     output:
     path 'rmats_files/*.txt' into rmats_ch
 
     cpus ${params.cpus}
     memory ${params.memory}
+    queue params.queue
 
     script:
     """
@@ -130,20 +140,17 @@ process rmats {
     module load ${params.intel}
     module load ${params.pgi}
 
-    BATCH1_PATH=${params.rmats_b1}
-    BATCH2_PATH=${params.rmats_b2}
-
     mkdir -p rmats_files/tmp
 
-    SINGULARITY_IMAGE="/path/to/your_image.sif"
+    SINGULARITY_IMAGE=${params.singularity_image}
 
     singularity exec \
         -B ${workDir}:/data \
         ${SINGULARITY_IMAGE} \
         python -u /rmats-turbo/rmats.py \
-            --b1 ${BATCH1_PATH} \
-            --b2 ${BATCH2_PATH} \
-            --gtf /path/to/annotated.gtf \
+            --b1 ${batch1_files} \
+            --b2 ${batch2_files} \
+            --gtf ${params.gtf_path} \
             -t paired \
             --readLength 100 \
             --od "rmats_files" \
@@ -158,23 +165,20 @@ workflow rna_seq {
     // Conditional logic for each process
     if (params.sra_download) {
         sra_download()
-    }
-    else {
-        fastq_ch = channel.fromPath("fastq_files/*.{fq,fq.gz,fastq,fastq.gz}")
+    } else {
+        fastq_ch = Channel.fromPath("fastq_files/*.{fq,fq.gz,fastq,fastq.gz}")
     }
 
     if (params.star_alignment) {
         star_alignment()
-    }
-    else {
-        bam_ch = channel.fromPath("bam_files/*.bam")
+    } else {
+        bam_ch = Channel.fromPath("bam_files/*.bam")
     }
 
     if (params.bam_sort) {
         bam_sort()
-    }
-    else {
-        sorted_bam_ch = channel.fromPath("sorted_bam_files/*.sorted.bam")
+    } else {
+        sorted_bam_ch = Channel.fromPath("sorted_bam_files/*.sorted.bam")
     }
 
     if (params.rmats && params.rmats_b1 && params.rmats_b2) {
