@@ -115,15 +115,11 @@ process bam_sort {
     """
 }
 
-batch1_ch = Channel.value(file(params.rmats_b1).list())
-batch2_ch = Channel.value(file(params.rmats_b2).list())
+batch1_file = params.rmats_b1
+batch2_file = params.rmats_b2
 
 process rmats {
     publishDir "rmats_files", type: 'directory'
-
-    input:
-    val batch1_files from batch1_ch
-    val batch2_files from batch2_ch
 
     output:
     path 'rmats_files/*.txt' into rmats_ch
@@ -140,7 +136,7 @@ process rmats {
     module load ${params.intel}
     module load ${params.pgi}
 
-    mkdir -p rmats_files/tmp
+    mkdir -p rmats_files rmats_files/tmp
 
     SINGULARITY_IMAGE=${params.singularity_image}
 
@@ -148,8 +144,8 @@ process rmats {
         -B ${workDir}:/data \
         ${SINGULARITY_IMAGE} \
         python -u /rmats-turbo/rmats.py \
-            --b1 ${batch1_files.join(',')} \
-            --b2 ${batch2_files.join(',')} \
+            --b1 ${batch1_file} \
+            --b2 ${batch2_file} \
             --gtf ${params.gtf_path} \
             -t paired \
             --readLength 100 \
