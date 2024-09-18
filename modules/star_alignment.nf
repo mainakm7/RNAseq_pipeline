@@ -1,13 +1,13 @@
 process star_alignment {
-    publishDir "bam_files", mode: 'copy'
-    publishDir "count_files", mode: 'copy'
+    publishDir "${params.workingdir}/bam_files", mode: 'copy'
+    publishDir "${params.workingdir}/count_files", mode: 'copy'
 
     input:
     tuple val(sample_id), path(reads)
 
     output:
-    path 'bam_files/*.bam', emit: bam_ch
-    path 'count_files/*.out.tab'
+    path "${params.workingdir}/bam_files/*.bam", emit: bam_ch
+    path "${params.workingdir}/count_files/*.out.tab"
 
     cpus params.cpus
     memory params.memory
@@ -18,7 +18,7 @@ process star_alignment {
     module purge
     module load ${params.STAR}
 
-    mkdir -p bam_files count_files
+    mkdir -p ${params.workingdir}/bam_files ${params.workingdir}/count_files
 
     STAR --genomeDir "${params.genomedir}" \
          --readFilesIn ${reads} \
@@ -28,7 +28,7 @@ process star_alignment {
          --sjdbGTFfile "${params.gtf_path}" \
          --outFileNamePrefix "${sample_id}_"
 
-    mv *Aligned.out.bam bam_files/${sample_id}.bam
-    mv *ReadsPerGene.out.tab count_files/${sample_id}.out.tab
+    mv *Aligned.out.bam ${params.workingdir}/bam_files/${sample_id}.bam
+    mv *ReadsPerGene.out.tab ${params.workingdir}/count_files/${sample_id}.out.tab
     """
 }

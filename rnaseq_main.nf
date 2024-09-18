@@ -16,6 +16,7 @@ params {
     intel = 'intel/17.0.4'
     pgi = 'pgi'
     rmats = 'rmats'
+    workingdir = "/path/to/working/directory"
     cpus = 64
     memory = "200GB"
     queue = 'your_queue'
@@ -36,14 +37,14 @@ workflow do_full {
 
     main:
     sra_download(ngcpath, cartpath)
-    fastqpair_ch = Channel.fromFilePairs('fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}', size: 2)
+    fastqpair_ch = Channel.fromFilePairs("${params.workingdir}/fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}", size: 2)
     star_alignment(fastqpair_ch)
     bam_sort(star_alignment.out.bam_ch)
 }
 
 workflow do_fastq2bam {
     take:
-    fastqpair_ch = Channel.fromFilePairs('fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}', size: 2)
+    fastqpair_ch = Channel.fromFilePairs("${params.workingdir}/fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}", size: 2)
 
     main:
     star_alignment(fastqpair_ch)

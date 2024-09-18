@@ -1,12 +1,12 @@
 process rmats {
-    publishDir "rmats_files", mode: 'copy'
+    publishDir "${params.workingdir}/rmats_files", mode: 'copy'
 
     input:
     path batch1_file
     path batch2_file
 
     output:
-    path 'rmats_files/*.txt'
+    path "${params.workingdir}/rmats_files/*.txt"
 
     cpus params.cpus
     memory params.memory
@@ -20,7 +20,7 @@ process rmats {
     module load ${params.intel}
     module load ${params.pgi}
 
-    mkdir -p rmats_files rmats_files/tmp
+    mkdir -p ${params.workingdir}/rmats_files ${params.workingdir}/rmats_files/tmp
 
     singularity exec \
         -B ${workDir}:/data \
@@ -31,10 +31,10 @@ process rmats {
             --gtf ${params.gtf_path} \
             -t paired \
             --readLength 100 \
-            --od "rmats_files" \
+            --od "${params.workingdir}/rmats_files" \
             --variable-read-length \
             --nthread ${task.cpus} \
-            --tmp "rmats_files/tmp" \
+            --tmp "${params.workingdir}/rmats_files/tmp" \
             --allow-clipping
     """
 }
