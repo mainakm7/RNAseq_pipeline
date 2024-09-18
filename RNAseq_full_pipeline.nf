@@ -1,12 +1,10 @@
+nextflow.enable.dsl=2
+
 params {
     cartpath = ""
     ngcpath = ""
     genomedir = ""
     gtf_path = ""
-    sra_download = true
-    star_alignment = true
-    bam_sort = true
-    rmats = true
     rmats_b1 = ""
     rmats_b2 = ""
     singularity_image = ""
@@ -17,23 +15,24 @@ params {
     singularity = 'singularity/3.1.0'
     intel = 'intel/17.0.4'
     pgi = 'pgi'
+    rmats = 'rmats'
     cpus = 64
     memory = "200GB"
     queue = 'your_queue'
 }
 
 process sra_download {
-    publishDir "fastq_files", type: 'directory'
+    publishDir "fastq_files", mode: 'copy'
 
     input:
-    path ngcpath from params.ngcpath
-    path cartpath from params.cartpath
+    path ngcpath
+    path cartpath
 
     output:
-    path 'fastq_files/*.{fq,fq.gz,fastq,fastq.gz}' into fastq_ch
+    path 'fastq_files/*.{fq,fq.gz,fastq,fastq.gz}'
 
-    cpus ${params.cpus}
-    memory ${params.memory}
+    cpus params.cpus
+    memory params.memory
     queue params.queue
 
     script:
@@ -50,21 +49,19 @@ process sra_download {
     """
 }
 
-fastqpair_ch = Channel.fromFilePairs( 'fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}', size: 2 )
-
 process star_alignment {
-    publishDir "bam_files", type: 'directory'
-    publishDir "count_files", type: 'directory'
+    publishDir "bam_files", mode: 'copy'
+    publishDir "count_files", mode: 'copy'
 
     input:
-    tuple path fastq_file1, fastq_file2 from fastqpair_ch
+    tuple val(sample_id), path(reads)
 
     output:
-    path 'bam_files/*.bam' into bam_ch
-    path 'count_files/*.out.tab' into countfiles_ch
+    path 'bam_files/*.bam', emit: bam_ch
+    path 'count_files/*.out.tab'
 
-    cpus ${params.cpus}
-    memory ${params.memory}
+    cpus params.cpus
+    memory params.memory
     queue params.queue
 
     script:
@@ -72,36 +69,32 @@ process star_alignment {
     module purge
     module load ${params.STAR}
 
-    base_name=${fastq_file1.baseName.replace('_1', '')}
-    GENOME_REF_DIR=${params.genomedir}
-    GTF_PATH=${params.gtf_path}
-
     mkdir -p bam_files count_files
 
-    STAR --genomeDir "${GENOME_REF_DIR}" \
-         --readFilesIn "${fastq_file1}" "${fastq_file2}" \
+    STAR --genomeDir "${params.genomedir}" \
+         --readFilesIn ${reads} \
          --readFilesCommand zcat \
          --quantMode GeneCounts \
          --outSAMtype BAM Unsorted \
-         --sjdbGTFfile "${GTF_PATH}" \
-         --outFileNamePrefix "${base_name}_"
+         --sjdbGTFfile "${params.gtf_path}" \
+         --outFileNamePrefix "${sample_id}_"
 
-    mv *.bam bam_files/
-    mv *.out.tab count_files/
+    mv *Aligned.out.bam bam_files/${sample_id}.bam
+    mv *ReadsPerGene.out.tab count_files/${sample_id}.out.tab
     """
 }
 
 process bam_sort {
-    publishDir "sorted_bam_files", type: 'directory'
+    publishDir "sorted_bam_files", mode: 'copy'
 
     input:
-    path bam_file from bam_ch
+    path bam_file
 
     output:
-    path 'sorted_bam_files/*.sorted.bam' into sorted_bam_ch
+    path 'sorted_bam_files/*.sorted.bam', emit: sorted_bam_ch
 
-    cpus ${params.cpus}
-    memory ${params.memory}
+    cpus params.cpus
+    memory params.memory
     queue params.queue
 
     script:
@@ -111,21 +104,22 @@ process bam_sort {
 
     mkdir -p sorted_bam_files
 
-    samtools sort -n -@ ${task.cpus} -m 2G ${bam_file} -o sorted_bam_files/\${bam_file.baseName}.sorted.bam
+    samtools sort -n -@ ${task.cpus} -m 2G ${bam_file} -o sorted_bam_files/${bam_file.baseName}.sorted.bam
     """
 }
 
-batch1_file = params.rmats_b1
-batch2_file = params.rmats_b2
-
 process rmats {
-    publishDir "rmats_files", type: 'directory'
+    publishDir "rmats_files", mode: 'copy'
+
+    input:
+    path batch1_file
+    path batch2_file
 
     output:
-    path 'rmats_files/*.txt' into rmats_ch
+    path 'rmats_files/*.txt'
 
-    cpus ${params.cpus}
-    memory ${params.memory}
+    cpus params.cpus
+    memory params.memory
     queue params.queue
 
     script:
@@ -138,11 +132,9 @@ process rmats {
 
     mkdir -p rmats_files rmats_files/tmp
 
-    SINGULARITY_IMAGE=${params.singularity_image}
-
     singularity exec \
         -B ${workDir}:/data \
-        ${SINGULARITY_IMAGE} \
+        ${params.singularity_image} \
         python -u /rmats-turbo/rmats.py \
             --b1 ${batch1_file} \
             --b2 ${batch2_file} \
@@ -157,28 +149,85 @@ process rmats {
     """
 }
 
+process rmatsv2 {
+    publishDir "rmats_files", mode: 'copy'
 
-workflow rna_seq {
-    // Conditional logic for each process
-    if (params.sra_download) {
-        sra_download()
-    } else {
-        fastq_ch = Channel.fromPath("fastq_files/*.{fq,fq.gz,fastq,fastq.gz}")
-    }
+    input:
+    path batch1_file
+    path batch2_file
 
-    if (params.star_alignment) {
-        star_alignment()
-    } else {
-        bam_ch = Channel.fromPath("bam_files/*.bam")
-    }
+    output:
+    path 'rmats_files/*.txt'
 
-    if (params.bam_sort) {
-        bam_sort()
-    } else {
-        sorted_bam_ch = Channel.fromPath("sorted_bam_files/*.sorted.bam")
-    }
+    cpus params.cpus
+    memory params.memory
+    queue params.queue
 
-    if (params.rmats && params.rmats_b1 && params.rmats_b2) {
-        rmats()
-    }
+    script:
+    """
+    module purge
+    module load ${params.STAR}
+    module load ${params.intel}
+    module load ${params.pgi}
+
+    module use ${params.modulepath}
+    module load ${params.rmats}
+
+    mkdir -p rmats_files rmats_files/tmp
+
+    python -u /rmats-turbo/rmats.py \
+        --b1 ${batch1_file} \
+        --b2 ${batch2_file} \
+        --gtf ${params.gtf_path} \
+        -t paired \
+        --readLength 100 \
+        --od "rmats_files" \
+        --variable-read-length \
+        --nthread ${task.cpus} \
+        --tmp "rmats_files/tmp" \
+        --allow-clipping
+    """
+}
+
+workflow do_full {
+    take:
+    ngcpath
+    cartpath
+
+    main:
+    sra_download(ngcpath, cartpath)
+    fastqpair_ch = Channel.fromFilePairs('fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}', size: 2)
+    star_alignment(fastqpair_ch)
+    bam_sort(star_alignment.out.bam_ch)
+}
+
+workflow do_fastq2bam {
+    take:
+    fastqpair_ch = Channel.fromFilePairs('fastq_files/*_{1,2}.{fq,fq.gz,fastq,fastq.gz}', size: 2)
+
+    main:
+    star_alignment(fastqpair_ch)
+    bam_sort(star_alignment.out.bam_ch)
+}
+
+workflow do_rmats {
+    take:
+    batch1_file
+    batch2_file
+
+    main:
+    rmats(batch1_file, batch2_file)
+}
+
+workflow do_rmatsv2 {
+    take:
+    batch1_file
+    batch2_file
+
+    main:
+    rmatsv2(batch1_file, batch2_file)
+}
+
+workflow {
+    do_full(params.ngcpath, params.cartpath)
 }
