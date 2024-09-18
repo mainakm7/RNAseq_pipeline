@@ -56,26 +56,67 @@ To run the entire pipeline using Nextflow with SLURM, follow these steps:
     sbatch rnaseq_pipeline_slurm.sh
 
 ## Parameters
-`-entry [optional] workflow_name`: Select the specific workflow to execute (e.g., do_full, do_fastq2bam, do_rmats, do_rmatsv2).
-`-cartpath "path/to/cartfile"`: Path to the SRA cartfile for data download.
-`-ngcpath "path/to/ngcfile"`: Path to the NGC file for SRA authentication.
-`-genomedir "path/to/ref/genome/directory"`: Path to the reference genome directory for alignment.
-`-gtfpath "path/to/annotated/gtf"`: Path to the GTF file for gene annotation.
-`-rmats_b1 "path/to/rmats/batch1/files/list/txt"`: Path to the list of batch 1 files for RMATS analysis.
-`-rmats_b2 "path/to/rmats/batch2/files/list/txt"`: Path to the list of batch 2 files for RMATS analysis.
-`-singularity_image "path/to/singularity/image/for/rmats"`: Path to the Singularity image for RMATS analysis.
-`-modulepath "path/to/modulefiles"`: Path to modulefiles directory.
-`-sratoolkit "sratoolkit/[module version OPTIONAL]"`: SRA Toolkit module.
-`-STAR "STAR/[module version OPTIONAL]"`: STAR aligner module.
-`-samtools "samtools/[module version OPTIONAL]"`: Samtools module.
-`-singularity "singularity/[module version OPTIONAL]"`: Singularity module.
-`-intel "intel/[module version OPTIONAL]"`: Intel module.
-`-pgi "pgi/[module version OPTIONAL]"`: PGI module.
-`-rmats "rmats/[module version OPTIONAL]"`: RMATS module.
-`-workingdir $(PWD)`: Working directory for intermediate and output files.
-`-cpus ${SLURM_CPUS_PER_TASK}`: Number of CPUs allocated for the job.
-`-memory ${SLURM_MEM}`: Amount of memory allocated for the job.
-`-queue 'your_queue'`: SLURM queue to use for job submission.
+
+- `-entry [optional] workflow_name`: 
+  Select the specific workflow to execute (e.g., `do_full`, `do_fastq2bam`, `do_rmats`, `do_rmatsv2`).
+
+- `-cartpath "path/to/cartfile"`: 
+  Path to the SRA cartfile for data download.
+
+- `-ngcpath "path/to/ngcfile"`: 
+  Path to the NGC file for SRA authentication.
+
+- `-genomedir "path/to/ref/genome/directory"`: 
+  Path to the reference genome directory for alignment.
+
+- `-gtfpath "path/to/annotated/gtf"`: 
+  Path to the GTF file for gene annotation.
+
+- `-rmats_b1 "path/to/rmats/batch1/files/list/txt"`: 
+  Path to the list of batch 1 files for RMATS analysis.
+
+- `-rmats_b2 "path/to/rmats/batch2/files/list/txt"`: 
+  Path to the list of batch 2 files for RMATS analysis.
+
+- `-singularity_image "path/to/singularity/image/for/rmats"`: 
+  Path to the Singularity image for RMATS analysis.
+
+- `-modulepath "path/to/modulefiles"`: 
+  Path to modulefiles directory.
+
+- `-sratoolkit "sratoolkit/[module version OPTIONAL]"`: 
+  SRA Toolkit module.
+
+- `-STAR "STAR/[module version OPTIONAL]"`: 
+  STAR aligner module.
+
+- `-samtools "samtools/[module version OPTIONAL]"`: 
+  Samtools module.
+
+- `-singularity "singularity/[module version OPTIONAL]"`: 
+  Singularity module.
+
+- `-intel "intel/[module version OPTIONAL]"`: 
+  Intel module.
+
+- `-pgi "pgi/[module version OPTIONAL]"`: 
+  PGI module.
+
+- `-rmats "rmats/[module version OPTIONAL]"`: 
+  RMATS module.
+
+- `-workingdir $(PWD)`: 
+  Working directory for intermediate and output files.
+
+- `-cpus ${SLURM_CPUS_PER_TASK}`: 
+  Number of CPUs allocated for the job.
+
+- `-memory ${SLURM_MEM}`: 
+  Amount of memory allocated for the job.
+
+- `-queue 'your_queue'`: 
+  SLURM queue to use for job submission.
+
 
 
 # Contribution
