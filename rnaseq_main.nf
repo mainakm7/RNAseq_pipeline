@@ -21,14 +21,14 @@ params {
     queue = 'your_queue'
 }
 
-// Include the module files
+
 include { sra_download } from './modules/sra_download.nf'
 include { star_alignment } from './modules/star_alignment.nf'
 include { bam_sort } from './modules/bam_sort.nf'
 include { rmats } from './modules/rmats.nf'
 include { rmatsv2 } from './modules/rmatsv2.nf'
 
-// Define workflows here
+
 workflow do_full {
     take:
     ngcpath
