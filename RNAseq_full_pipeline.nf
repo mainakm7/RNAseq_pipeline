@@ -213,20 +213,20 @@ workflow do_fastq2bam {
 
 workflow do_rmats {
     take:
-    batch1_file
-    batch2_file
+    params.rmats_b1
+    params.rmats_b2
 
     main:
-    rmats(batch1_file, batch2_file)
+    rmats(params.rmats_b1, params.rmats_b2)
 }
 
 workflow do_rmatsv2 {
     take:
-    batch1_file
-    batch2_file
+    params.rmats_b1
+    params.rmats_b2
 
     main:
-    rmatsv2(batch1_file, batch2_file)
+    rmatsv2(params.rmats_b1, params.rmats_b2)
 }
 
 workflow {
