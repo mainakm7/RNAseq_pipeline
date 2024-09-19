@@ -212,21 +212,22 @@ workflow do_fastq2bam {
 }
 
 workflow do_rmats {
-    take:
-    params.rmats_b1
-    params.rmats_b2
-
     main:
-    rmats(params.rmats_b1, params.rmats_b2)
+    if (params.rmats_b1 && params.rmats_b2) {
+        rmats(params.rmats_b1, params.rmats_b2)
+    } else {
+        error "Batch files for RMATS are missing!"
+    }
 }
 
-workflow do_rmatsv2 {
-    take:
-    params.rmats_b1
-    params.rmats_b2
 
+workflow do_rmatsv2 {
     main:
-    rmatsv2(params.rmats_b1, params.rmats_b2)
+    if (params.rmats_b1 && params.rmats_b2) {
+        rmats(params.rmats_b1, params.rmats_b2)
+    } else {
+        error "Batch files for RMATS are missing!"
+    }
 }
 
 workflow {
