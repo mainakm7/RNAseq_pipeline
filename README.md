@@ -119,7 +119,7 @@ To run the entire pipeline using Nextflow with SLURM, follow these steps:
 
 
 
-# Contribution
+# Contribution-
 
 Feel free to contribute to this project by opening issues or submitting pull requests. Contributions are welcome to improve functionality, add features, or fix bugs.
 
